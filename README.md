@@ -310,5 +310,70 @@ New, In specification, Specified, Confirmed, To be scheduled, Scheduled, In prog
 ```bash
 npm run dev      # Watch mode
 npm test         # Chạy test
-npm run build    # Build TypeScript
+npm run build    # Build TypeScrip
+
+```
+Ví dụ:
+```
+opcli git:(master) opcli tasks list
+ID    | Status      | Priority  | Assignee               | Created    | Updated    | Subject
+-------------------------------------------------------------------------------------------------------------------------------
+54379 | New         | Immediate | thuchuynh@chidoanh.com | 2026-03-11 | 2026-03-12 | [DE] Lỗi 1 số product có giá trị field Ad Clicks và Ad Spend thấp hơn source GG + FB trên Melinda
+54380 | In progress | Normal    | thuchuynh@chidoanh.com | 2026-03-11 | 2026-03-12 | [DE] Fix Bug Dynamic Mapping
+54158 | Closed      | High      | thuchuynh@chidoanh.com | 2026-03-02 | 2026-03-12 | [Support] DE truyền thêm request_user_agent:conative trong các request đến Mizmooz và As98
+54405 | Closed      | Normal    | thuchuynh@chidoanh.com | 2026-03-11 | 2026-03-12 | [Dynamic mapping][DE][AMZ] Lỗi  lệch số liệu ads spend, ads click ở conative so với  AMZ của org Purely Optimal 
+54130 | Closed      | Normal    | thuchuynh@chidoanh.com | 2026-02-27 | 2026-03-12 | [Dynamic Mapping] [DE] Lỗi lệch data Summary giữa Production và Staging API List Product
+54381 | Closed      | High      | thuchuynh@chidoanh.com | 2026-03-11 | 2026-03-12 | [Dynamic mapping][DE][AMZ] Lỗi  lệch số liệu tax và discount ở conative so với AMZ của org Purely Optimal
+54369 | Closed      | High      | thuchuynh@chidoanh.com | 2026-03-10 | 2026-03-12 | [Dynamic mapping][DE][AMZ] Lỗi  lệch số liệu gross quantity, gross sale ở conative so với  AMZ của org Purely Optimal 
+54134 | Closed      | Normal    | thuchuynh@chidoanh.com | 2026-02-27 | 2026-03-12 | [Dynamic Mapping] [DE] Lỗi lệch data Inventory giữa Production và Staging API List Product
+54132 | Closed      | Normal    | thuchuynh@chidoanh.com | 2026-02-27 | 2026-03-12 | [Dynamic Mapping] [DE] Lỗi lệch data AI giữa Production và Staging API List Product
+54407 | Rejected    | High      | thuchuynh@chidoanh.com | 2026-03-11 | 2026-03-12 | [Dynamic mapping][DE][AMZ] Lỗi  lệch số liệu product view ở org Annmarie 
+54313 | In progress | Normal    | thuchuynh@chidoanh.com | 2026-03-06 | 2026-03-10 | [TECH-DM-001] DM_P4 - Research solution & Todo list
+54360 | New         | Normal    | thuchuynh@chidoanh.com | 2026-03-10 | 2026-03-10 | [TECH-FAI-001] Phase 1 - Init Flow for AI Forecasting Automation
+54292 | Closed      | Immediate | thuchuynh@chidoanh.com | 2026-03-05 | 2026-03-09 | [Rithum/OPS] - Lỗi data tax ở OPS cao hơn so với data service
+54291 | Closed      | Immediate | thuchuynh@chidoanh.com | 2026-03-05 | 2026-03-09 | [Rithum/OPS] - Lỗi data return_value/return quantity ở OPS thấp hơn gấp đôi so với data service
+54337 | Developed   | Normal    | thuchuynh@chidoanh.com | 2026-03-09 | 2026-03-09 | [Bearchop] Extend free trial to 31/06/2026
+54311 | Closed      | Normal    | thuchuynh@chidoanh.com | 2026-03-06 | 2026-03-06 | Research how to implement Dynamic Injection Step
+54070 | Closed      | High      | thuchuynh@chidoanh.com | 2026-02-24 | 2026-03-04 | [DE][Onboarding Daklac Farms Fruit] - Lỗi data list sales channel ở conative cao hơn so với AMZ
+54206 | Developed   | High      | thuchuynh@chidoanh.com | 2026-03-03 | 2026-03-03 | [Noonday] Cập nhật trial đến 31.03.2026
+54067 | In progress | High      | thuchuynh@chidoanh.com | 2026-02-24 | 2026-03-03 | [DE][Onboarding Daklac Farms Fruit] - Lỗi lệch data FC transfer quantity so với AMZ
+54057 | Tested      | Immediate | thuchuynh@chidoanh.com | 2026-02-24 | 2026-02-26 | [Bearchop][BE]_Lỗi data sale ở conative nhỏ hơn so với source
+53669 | Developed   | Normal    | thuchuynh@chidoanh.com | 2026-01-26 | 2026-02-12 | [TECH-04-004] Refactor ERP ETL All Platform Handling Stock Metric & Stock Metadata
+52292 | Developed   | Normal    | thuchuynh@chidoanh.com | 2025-11-24 | 2026-02-12 | [TECH-DM-001] Phase 3 - Implement Ingest Step Mapping for SilverItem to TempItem
+53724 | Developed   | Normal    | thuchuynh@chidoanh.com | 2026-01-27 | 2026-02-11 | [TECH-DM-001] Implement Dynamic mapping for ERP Platform
+```
+
+```
+ opcli git:(master) ✗ opcli tasks view 45570 
+#45570  [Amazon Seller] - DE Discovery metric of FBA Inventory
+
+  Type:       Discovery
+  Project:    Conative PaaS
+  Status:     Developed
+  Priority:   Normal
+  Assignee:   thuchuynh@chidoanh.com
+  Author:     huynguyen@chidoanh.com
+  Progress:   0%
+  Created:    2025-07-25
+  Updated:    2025-07-30
+  Start:      2025-07-28
+  Due:        2025-07-29
+
+Description:
+
+1m| **Data cần lấy**        | **Note**                                                            |
+| ----------------------- | ------------------------------------------------------------------- |
+| Days of Supply          | ![ (https://devtak.cbidigital.com/api/v3/attachments/58401/content) |
+| Recommended min. level  | ![](https://devtak.cbidigital.com/api/v3/attachments/58403/content) |
+| FBA Recommended Restock | ![](https://devtak.cbidigital.com/api/v3/attachments/58402/content) |
+| Reccomended Ship date   | ![](https://devtak.cbidigital.com/api/v3/attachments/58400/content) |
+| Shipment Name           | ![](https://devtak.cbidigital.com/api/v3/attachments/58399/content) |
+| Created Date            |                                                                     |
+| Shipment Status         |                                                                     |
+| Shipment Qty            |                                                                     |
+| Shipment Item           |                                                                     |
+| Ranking                 |                                                                     |
+| Rating of product       |                                                                     |
+| Product View            |                                                                     |
+| Keyword of varaint      |                                                                     |
 ```
