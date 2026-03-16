@@ -12,6 +12,11 @@ ${HOOK_MARKER}
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 TASK_ID=$(echo "$BRANCH" | grep -oP '(?<=/op-)\\d+' 2>/dev/null || echo "$BRANCH" | sed -n 's/.*\\/op-\\([0-9]*\\).*/\\1/p')
 if [ -n "$TASK_ID" ]; then
+  LAST_MSG=$(git log -1 --pretty=%s)
+  if echo "$LAST_MSG" | grep -qiE "(^|[[:space:]])done:"; then
+    opcli tasks update "$TASK_ID" --status "Developed"
+    echo "\\033[32m[opcli] Task OP-$TASK_ID updated to Developed\\033[0m"
+  fi
   exec < /dev/tty
   echo ""
   echo "\\033[1m[opcli] Log time for task #$TASK_ID\\033[0m"
