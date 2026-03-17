@@ -32,7 +32,7 @@ configCommand
       saveConfig({ url, username, password, session, autoLogin });
       console.log("Configuration saved.");
       if (autoLogin) {
-        console.log(chalk.gray("Auto-login enabled. Session will refresh every 2h when focus monitor is running."));
+        console.log(chalk.gray("Auto-login enabled."));
       }
     } catch (err: any) {
       console.error(`Error: ${err.message}`);

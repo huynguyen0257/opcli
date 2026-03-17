@@ -289,27 +289,6 @@ Kết quả theo số giờ đã log:
 
 Notification gửi qua `terminal-notifier` (cần `brew install terminal-notifier`) + luôn in ra terminal.
 
-### Focus
-
-Theo dõi hoạt động và nhắc nhở khi idle quá lâu (chuột/bàn phím không hoạt động).
-
-```bash
-# Bật focus monitor (mặc định 10 phút)
-opcli focus on
-
-# Bật với threshold 15 phút
-opcli focus on -i 15
-
-# Tắt focus monitor
-opcli focus off
-
-# Xem trạng thái
-opcli focus status
-```
-
-Khi idle vượt threshold, sẽ gửi notification nhắc quay lại làm việc. Tự động reset khi phát hiện hoạt động trở lại.
-
-Yêu cầu macOS (sử dụng `ioreg` để detect idle time).
 
 ## Các status có sẵn
 

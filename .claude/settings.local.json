@@ -51,7 +51,8 @@
       "Bash(node dist/index.js stats --team -w 2>&1)",
       "Bash(node dist/index.js stats --team 2>&1)",
       "Bash(node dist/index.js stats --team -w 10 2>&1)",
-      "Bash(ioreg -c IOHIDSystem)"
+      "Bash(ioreg -c IOHIDSystem)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

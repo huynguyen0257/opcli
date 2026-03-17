@@ -7,7 +7,7 @@ import { notificationsCommand } from "./commands/notifications.js";
 import { reminderCommand } from "./commands/reminder.js";
 import { statsCommand } from "./commands/stats.js";
 import { alertCommand } from "./commands/alert.js";
-import { focusCommand } from "./commands/focus.js";
+
 
 const program = new Command();
 
@@ -24,6 +24,6 @@ program.addCommand(notificationsCommand);
 program.addCommand(reminderCommand);
 program.addCommand(statsCommand);
 program.addCommand(alertCommand);
-program.addCommand(focusCommand);
+
 
 program.parse();

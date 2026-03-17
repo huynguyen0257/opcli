@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { loadConfig } from "../config/store.js";
 import { OpenProjectClient } from "../api/openproject.js";
 import type { TimeEntry } from "../api/openproject.js";
-import { loadActivityForDate } from "./focus.js";
+
 
 function requireConfig() {
   const config = loadConfig();
@@ -36,40 +36,6 @@ function getDayName(dateStr: string): string {
 
 export const statsCommand = new Command("stats");
 
-function calcWorkMinutes(
-  dateStr: string,
-  schedule: { startHour: number; endHour: number; lunchStart: string; lunchEnd: string }
-): { workMinutes: number; idleMinutes: number; totalScheduleMinutes: number } {
-  const activeMinutes = loadActivityForDate(dateStr);
-  const startMin = schedule.startHour * 60;
-  const endMin = schedule.endHour * 60;
-  const [lsH, lsM] = schedule.lunchStart.split(":").map(Number);
-  const [leH, leM] = schedule.lunchEnd.split(":").map(Number);
-  const lunchStartMin = lsH * 60 + lsM;
-  const lunchEndMin = leH * 60 + leM;
-
-  const scheduleMins = (endMin - startMin) - (lunchEndMin - lunchStartMin);
-
-  const workMins = activeMinutes.filter((m) => {
-    if (m < startMin || m >= endMin) return false;
-    if (m >= lunchStartMin && m < lunchEndMin) return false;
-    return true;
-  });
-
-  return {
-    workMinutes: workMins.length,
-    idleMinutes: Math.max(0, scheduleMins - workMins.length),
-    totalScheduleMinutes: scheduleMins,
-  };
-}
-
-function formatHM(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0 && m > 0) return `${h}h${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
-}
 
 function getWeekNumber(dateStr: string): number {
   const d = new Date(dateStr);
@@ -131,8 +97,6 @@ async function showMyStats(
 
   const pad = (s: string, w: number) => s + " ".repeat(Math.max(0, w - s.length));
   let totalLoggedHours = 0;
-  let totalWorkMin = 0;
-  let totalIdleMin = 0;
   let workDays = 0;
   let loggedDays = 0;
   const today = now.toISOString().substring(0, 10);
@@ -164,20 +128,9 @@ async function showMyStats(
       continue;
     }
 
-    const activity = calcWorkMinutes(dateStr, schedule);
-    totalWorkMin += activity.workMinutes;
-    totalIdleMin += activity.idleMinutes;
-
-    const hasActivity = activity.workMinutes > 0;
-    const workLabel = hasActivity
-      ? chalk.green(formatHM(activity.workMinutes))
-      : chalk.red("0m");
-    const idleLabel = activity.idleMinutes > 0
-      ? chalk.yellow(formatHM(activity.idleMinutes))
-      : chalk.green("0m");
     const logLabel = dayTotal > 0 ? colorHours(dayTotal) : chalk.red("0.0h");
 
-    console.log(`  ${dateLabel}  ${workLabel} ${chalk.gray("work")}  ${idleLabel} ${chalk.gray("idle")}  ${logLabel} ${chalk.gray("logged")}`);
+    console.log(`  ${dateLabel}  ${logLabel} ${chalk.gray("logged")}`);
 
     if (dayEntries.length > 0) {
       dayEntries.forEach((e) => {
@@ -201,13 +154,9 @@ async function showMyStats(
   const expectedTotal = pastWorkDays * expectedPerDay;
   const avgLogged = loggedDays > 0 ? totalLoggedHours / loggedDays : 0;
 
-  console.log(chalk.bold(`\n  Active:   ${chalk.green(formatHM(totalWorkMin))} work  ${totalIdleMin > 0 ? chalk.yellow(formatHM(totalIdleMin)) : chalk.green("0m")} idle`));
-  console.log(chalk.bold(`  Logged:   ${colorHours(totalLoggedHours)} / ${expectedTotal.toFixed(1)}h expected`));
+  console.log(chalk.bold(`\n  Logged:   ${colorHours(totalLoggedHours)} / ${expectedTotal.toFixed(1)}h expected`));
   console.log(chalk.bold(`  Average:  ${colorHours(avgLogged)} logged / day`));
   console.log(chalk.gray(`  Work days: ${workDays} | Logged: ${loggedDays} | Missing: ${workDays - loggedDays}`));
-  if (totalWorkMin === 0 && pastWorkDays > 0) {
-    console.log(chalk.gray(`  Note: No activity data. Run 'opcli focus on' to track activity.`));
-  }
   console.log();
 }
 
