@@ -50,6 +50,10 @@ describe("OpenProjectClient", () => {
   it("listWorkPackages calls correct endpoint with filters", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      json: () => Promise.resolve({ id: 99, login: "testuser", firstName: "Test", lastName: "User" }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
       json: () =>
         Promise.resolve({
           _embedded: {
@@ -60,7 +64,7 @@ describe("OpenProjectClient", () => {
         }),
     });
     const tasks = await client.listWorkPackages();
-    const url = mockFetch.mock.calls[0][0] as string;
+    const url = mockFetch.mock.calls[1][0] as string;
     expect(url).toContain("/api/v3/work_packages");
     expect(url).toContain("filters");
     expect(tasks).toHaveLength(1);

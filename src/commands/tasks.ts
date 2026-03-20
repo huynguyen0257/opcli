@@ -530,15 +530,15 @@ tasksCommand
       delete process.env.OPCLI_SKIP_HOOK;
       console.log(chalk.green(`\nBranch "${branchName}" created and checked out.`));
 
-      const shouldUpdate = await confirm({ message: "Update task status to \"In Process\"?" });
+      const shouldUpdate = await confirm({ message: "Update task status to \"In progress\"?" });
       if (shouldUpdate) {
         const statuses = await client.getAvailableStatuses(task.id);
-        const match = statuses.find((s: any) => s.name.toLowerCase() === "in process");
+        const match = statuses.find((s: any) => s.name.toLowerCase() === "in progress");
         if (match) {
           await client.updateWorkPackage(task.id, task.lockVersion, { status: match.href });
-          console.log(chalk.green("Task status updated to \"In Process\"."));
+          console.log(chalk.green("Task status updated to \"In progress\"."));
         } else {
-          console.log(chalk.yellow("Status \"In Process\" not found."));
+          console.log(chalk.yellow("Status \"In progress\" not found."));
         }
       }
     } catch (err: any) {

@@ -45,9 +45,9 @@ if [ "$3" = "1" ] && [ "$1" = "$2" ]; then
     exec < /dev/tty
     echo ""
     echo "\\033[1m[opcli] New branch detected for task #$TASK_ID\\033[0m"
-    read -p "Update task OP-$TASK_ID to \\"In Process\\"? [Y/n] " answer
+    read -p "Update task OP-$TASK_ID to \\"In progress\\"? [Y/n] " answer
     if [ "$answer" != "n" ] && [ "$answer" != "N" ]; then
-      opcli tasks update "$TASK_ID" --status "In Process"
+      opcli tasks update "$TASK_ID" --status "In progress"
     fi
   fi
 fi
