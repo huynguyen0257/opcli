@@ -145,4 +145,51 @@ describe("OpenProjectClient", () => {
     expect(body.lockVersion).toBe(5);
     expect(body._links.status.href).toBe("/api/v3/statuses/2");
   });
+
+  it("createRelation posts relation body to work package relations endpoint", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve('<form><input type="hidden" name="authenticity_token" value="csrf-123" /></form>'),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve("<turbo-stream>ok</turbo-stream>"),
+    });
+
+    await client.createRelation(54907, {
+      type: "relates",
+      toWorkPackageId: 54559,
+      description: "release follow-up",
+    });
+
+    const getCall = mockFetch.mock.calls[0];
+    expect(getCall[0]).toBe("https://devtak.cbidigital.com/work_packages/54907/relations/new?relation_type=relates");
+
+    const postCall = mockFetch.mock.calls[1];
+    expect(postCall[0]).toBe("https://devtak.cbidigital.com/work_packages/54907/relations");
+    expect(postCall[1].method).toBe("POST");
+    expect(postCall[1].headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
+
+    const body = new URLSearchParams(postCall[1].body as string);
+    expect(body.get("authenticity_token")).toBe("csrf-123");
+    expect(body.get("relation[relation_type]")).toBe("relates");
+    expect(body.get("relation[to_id]")).toBe("54559");
+    expect(body.get("relation[description]")).toBe("release follow-up");
+  });
+
+  it("createWorkPackage includes parent link when creating a child", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 60001 }),
+    });
+
+    await client.createWorkPackage({
+      subject: "Release child",
+      project: "/api/v3/projects/82",
+      parent: "/api/v3/work_packages/54907",
+    });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body._links.parent.href).toBe("/api/v3/work_packages/54907");
+  });
 });

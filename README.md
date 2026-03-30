@@ -140,6 +140,14 @@ opcli tasks update <id> --log-time 4 --log-date 2026-03-12 --log-comment "Nội 
 opcli tasks update <id> -s "In progress" --start 2026-03-12 --due 2026-03-15 --log-time 2
 ```
 
+### Create relations
+
+```bash
+opcli tasks relate 54907 --type relates --to 54559
+opcli tasks relate 54907 --type blocks --to 54559 --description "Wait for release verification"
+opcli tasks relate 54907 --type create-child --name "Post-release QA" --project 82
+```
+
 ### Tạo branch từ task
 
 ```bash

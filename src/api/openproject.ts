@@ -176,6 +176,28 @@ export class OpenProjectClient {
     return res.json();
   }
 
+  private async requestHtml(path: string, options: RequestInit = {}): Promise<string> {
+    const url = path.startsWith("http") ? path : `${this.baseUrl}${path}`;
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        Cookie: this.cookie,
+        ...((options.headers as Record<string, string>) || {}),
+      },
+    });
+
+    const body = await res.text();
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Authentication failed. Run 'opcli config setup' to update credentials.");
+      }
+      const msg = body.match(/<title>([^<]+)<\/title>/)?.[1] || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    return body;
+  }
+
   async getMe(): Promise<User> {
     return this.request("/api/v3/users/me");
   }
@@ -310,6 +332,7 @@ export class OpenProjectClient {
     fields: {
       status?: string;
       assignee?: string;
+      parent?: string;
       startDate?: string;
       dueDate?: string;
       description?: string;
@@ -320,6 +343,7 @@ export class OpenProjectClient {
 
     if (fields.status) links.status = { href: fields.status };
     if (fields.assignee) links.assignee = { href: fields.assignee };
+    if (fields.parent) links.parent = { href: fields.parent };
     if (Object.keys(links).length > 0) body._links = links;
     if (fields.startDate !== undefined) body.startDate = fields.startDate;
     if (fields.dueDate !== undefined) body.dueDate = fields.dueDate;
@@ -444,6 +468,7 @@ export class OpenProjectClient {
     assignee?: string;
     project: string;
     type?: string;
+    parent?: string;
   }): Promise<number> {
     const body: any = {
       subject: fields.subject,
@@ -460,11 +485,43 @@ export class OpenProjectClient {
     if (fields.type) {
       body._links.type = { href: fields.type };
     }
+    if (fields.parent) {
+      body._links.parent = { href: fields.parent };
+    }
     const result = await this.request("/api/v3/work_packages", {
       method: "POST",
       body: JSON.stringify(body),
     });
     return result.id;
+  }
+
+  async createRelation(workPackageId: number, fields: {
+    type: string;
+    toWorkPackageId: number;
+    description?: string;
+  }): Promise<void> {
+    const formHtml = await this.requestHtml(
+      `/work_packages/${workPackageId}/relations/new?relation_type=${encodeURIComponent(fields.type)}`
+    );
+    const csrfToken = formHtml.match(/name="authenticity_token" value="([^"]+)"/)?.[1];
+    if (!csrfToken) {
+      throw new Error("Could not retrieve relation form authenticity token.");
+    }
+
+    const body = new URLSearchParams({
+      authenticity_token: csrfToken,
+      "relation[relation_type]": fields.type,
+      "relation[to_id]": String(fields.toWorkPackageId),
+      "relation[description]": fields.description || "",
+    });
+
+    await this.requestHtml(`/work_packages/${workPackageId}/relations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
   }
 
   async addComment(workPackageId: number, message: string): Promise<void> {
