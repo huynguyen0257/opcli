@@ -6,6 +6,13 @@ import { loadConfig } from "../config/store.js";
 import { OpenProjectClient } from "../api/openproject.js";
 import { select, input, checkbox, search, confirm } from "@inquirer/prompts";
 import type { WorkPackage, Version } from "../api/openproject.js";
+import {
+  isCreateChildType,
+  normalizeRelationType,
+  relationTypeChoices,
+  relationTypeLabel,
+  validateRelationInput,
+} from "../utils/task-relations.js";
 
 function requireConfig() {
   const config = loadConfig();
@@ -161,6 +168,173 @@ export function formatTasksTable(tasks: WorkPackage[]): string {
     }
   );
   return [header, separator, ...rows].join("\n");
+}
+
+export interface RelateCommandOptions {
+  type?: string;
+  to?: string | number;
+  description?: string;
+  name?: string;
+  project?: string;
+  assignee?: string;
+  confirmSource?: boolean;
+}
+
+export function buildRelationSuccessMessage(input: {
+  sourceId: number;
+  typeLabel: string;
+  targetId: number;
+  targetTitle: string;
+}): string {
+  return `Created relation ${input.typeLabel} from #${input.sourceId} to #${input.targetId} ${input.targetTitle}`;
+}
+
+export function buildSearchActionChoices() {
+  return [
+    { name: "View detail", value: "view" },
+    { name: "Update", value: "update" },
+    { name: "Relate", value: "relate" },
+    { name: "Comment", value: "comment" },
+    { name: "Create branch", value: "branch" },
+    { name: "Exit", value: "exit" },
+  ];
+}
+
+export async function resolveProjectInput(
+  client: OpenProjectClient,
+  project: string,
+): Promise<string> {
+  const projects = await client.listProjects();
+  const match = projects.find((p) =>
+    !isNaN(Number(project))
+      ? p.id === Number(project)
+      : p.name.toLowerCase() === project.toLowerCase()
+  );
+  if (!match) {
+    throw new Error(`Project "${project}" not found.`);
+  }
+  return match.href;
+}
+
+export async function resolveAssigneeInput(
+  client: OpenProjectClient,
+  assignee: string,
+): Promise<string> {
+  if (assignee === "me") {
+    const me = await client.getMe();
+    return `/api/v3/users/${me.id}`;
+  }
+  if (!isNaN(Number(assignee))) {
+    return `/api/v3/users/${assignee}`;
+  }
+  const users = await client.searchUsers(assignee);
+  if (users.length === 0) {
+    throw new Error(`No user found matching "${assignee}".`);
+  }
+  if (users.length > 1) {
+    throw new Error(`Multiple users found for "${assignee}". Specify user ID with -a <id>.`);
+  }
+  return `/api/v3/users/${users[0].id}`;
+}
+
+export async function runRelateFlow(
+  client: OpenProjectClient,
+  taskId: number,
+  options: RelateCommandOptions,
+) {
+  const task = await client.getWorkPackage(taskId);
+  console.log(chalk.bold(`#${task.id} ${task.subject}\n`));
+
+  const normalizedType = options.type
+    ? normalizeRelationType(options.type)
+    : await select({
+        message: "Select relation type:",
+        choices: relationTypeChoices.map((choice) => ({
+          name: choice.label,
+          value: choice.value,
+        })),
+      });
+  if (!normalizedType) {
+    throw new Error("Unsupported relation type.");
+  }
+
+  if (options.confirmSource !== true) {
+    const shouldContinue = await confirm({
+      message: `Create relation from #${task.id} ${task.subject}?`,
+      default: true,
+    });
+    if (!shouldContinue) {
+      console.log(chalk.gray("Canceled."));
+      return;
+    }
+  }
+
+  let targetId = options.to !== undefined ? Number(options.to) : undefined;
+  let childName = options.name;
+  let childProject = options.project;
+  let childAssignee = options.assignee;
+
+  if (isCreateChildType(normalizedType)) {
+    if (!childName) {
+      childName = await input({ message: "Child task subject:" });
+    }
+    if (!childProject) {
+      childProject = await input({ message: "Project name or ID:" });
+    }
+    if (!childAssignee) {
+      childAssignee = await input({ message: "Assignee (optional):" });
+    }
+  } else if (targetId === undefined || Number.isNaN(targetId)) {
+    targetId = Number(await input({ message: "Target work package ID:" }));
+  }
+
+  validateRelationInput({
+    type: normalizedType,
+    to: targetId,
+    name: childName,
+    project: childProject,
+  });
+
+  if (isCreateChildType(normalizedType)) {
+    const projectHref = await resolveProjectInput(client, childProject!);
+    const assigneeHref = childAssignee
+      ? await resolveAssigneeInput(client, childAssignee)
+      : undefined;
+    const childId = await client.createWorkPackage({
+      subject: childName!,
+      project: projectHref,
+      assignee: assigneeHref,
+      description: options.description,
+      parent: `/api/v3/work_packages/${task.id}`,
+    });
+    console.log(chalk.green(`Created child #${childId} under #${task.id}.`));
+    return;
+  }
+
+  const target = await client.getWorkPackage(targetId!);
+  if (normalizedType === "child" || normalizedType === "parent") {
+    await client.updateWorkPackage(task.id, task.lockVersion, {
+      parent: `/api/v3/work_packages/${target.id}`,
+    });
+    console.log(chalk.green(`Linked #${task.id} under parent #${target.id} ${target.subject}`));
+    return;
+  }
+
+  await client.createRelation(task.id, {
+    type: normalizedType,
+    toWorkPackageId: target.id,
+    description: options.description,
+  });
+  console.log(
+    chalk.green(
+      buildRelationSuccessMessage({
+        sourceId: task.id,
+        typeLabel: relationTypeLabel(normalizedType),
+        targetId: target.id,
+        targetTitle: target.subject,
+      }),
+    ),
+  );
 }
 
 export const tasksCommand = new Command("tasks");
@@ -536,6 +710,26 @@ tasksCommand
   });
 
 tasksCommand
+  .command("relate <id>")
+  .description("Create a relation from a work package")
+  .option("-t, --type <type>", "Relation type")
+  .option("--to <id>", "Target work package ID")
+  .option("--description <text>", "Relation description")
+  .option("--name <name>", "Child task subject when using create-child")
+  .option("-p, --project <project>", "Project name or ID for create-child")
+  .option("-a, --assignee <user>", "Assignee for create-child")
+  .action(async (id: string, options: RelateCommandOptions) => {
+    const config = requireConfig();
+    const client = new OpenProjectClient(config);
+    try {
+      await runRelateFlow(client, Number(id), options);
+    } catch (err: any) {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    }
+  });
+
+tasksCommand
   .command("create-branch <id> <slug>")
   .description("Create a git branch from a task")
   .option("-p, --prefix <prefix>", "Branch prefix (default: feature)")
@@ -735,19 +929,15 @@ tasksCommand
 
       const action = await select({
         message: "Action:",
-        choices: [
-          { name: "View detail", value: "view" },
-          { name: "Update", value: "update" },
-          { name: "Comment", value: "comment" },
-          { name: "Create branch", value: "branch" },
-          { name: "Exit", value: "exit" },
-        ],
+        choices: buildSearchActionChoices(),
       });
 
       if (action === "view") {
         execSync(`node ${process.argv[1]} tasks view ${chosen.id} --activities --relations`, { stdio: "inherit" });
       } else if (action === "update") {
         execSync(`node ${process.argv[1]} tasks update ${chosen.id}`, { stdio: "inherit" });
+      } else if (action === "relate") {
+        await runRelateFlow(client, chosen.id, {});
       } else if (action === "comment") {
         const msg = await input({ message: "Comment:" });
         if (msg) {

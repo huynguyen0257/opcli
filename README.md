@@ -140,6 +140,31 @@ opcli tasks update <id> --log-time 4 --log-date 2026-03-12 --log-comment "Nội 
 opcli tasks update <id> -s "In progress" --start 2026-03-12 --due 2026-03-15 --log-time 2
 ```
 
+### Create relations
+
+```bash
+# Standard relations
+opcli tasks relate 54907 --type relates --to 54559
+opcli tasks relate 54907 --type follows --to 54559
+opcli tasks relate 54907 --type precedes --to 54559
+opcli tasks relate 54907 --type duplicates --to 54559
+opcli tasks relate 54907 --type duplicated --to 54559
+opcli tasks relate 54907 --type blocks --to 54559 --description "Wait for release verification"
+opcli tasks relate 54907 --type blocked --to 54559
+opcli tasks relate 54907 --type includes --to 54559
+opcli tasks relate 54907 --type partof --to 54559
+opcli tasks relate 54907 --type requires --to 54559
+
+# Hierarchy aliases
+# Run from the child ticket; both forms set the real OpenProject parent link.
+opcli tasks relate 55758 --type parent --to 55756
+opcli tasks relate 55758 --type child --to 55756
+
+# Create a brand new child under the current ticket
+opcli tasks relate 54907 --type create-child --name "Post-release QA" --project 82
+opcli tasks relate 54907 --type create-child --name "Post-release QA" --project 82 -a me
+```
+
 ### Tạo branch từ task
 
 ```bash
