@@ -508,6 +508,7 @@ tasksCommand
   .description("Update a work package")
   .option("-s, --status <status>", "New status name")
   .option("-a, --assignee <user>", "Assignee (name or user ID)")
+  .option("--title <text>", "Update ticket title")
   .option("--start <date>", "Start date (YYYY-MM-DD)")
   .option("--due <date>", "Due date (YYYY-MM-DD)")
   .option("--description <text>", "Update description")
@@ -517,6 +518,7 @@ tasksCommand
   .action(async (id: string, options: {
     status?: string;
     assignee?: string;
+    title?: string;
     start?: string;
     due?: string;
     description?: string;
@@ -528,10 +530,19 @@ tasksCommand
     const client = new OpenProjectClient(config);
 
     try {
+      let nextTitle: string | undefined;
+      if (options.title !== undefined) {
+        nextTitle = options.title.trim();
+        if (!nextTitle) {
+          throw new Error("--title cannot be empty");
+        }
+      }
+
       const task = await client.getWorkPackage(Number(id));
       console.log(chalk.bold(`#${task.id} ${task.subject}\n`));
 
       const fields: {
+        subject?: string;
         status?: string;
         assignee?: string;
         startDate?: string;
@@ -579,6 +590,12 @@ tasksCommand
         }
         fields.assignee = assigneeHref;
         changes.push(`Assignee → ${options.assignee}`);
+      }
+
+      // Title
+      if (nextTitle !== undefined) {
+        fields.subject = nextTitle;
+        changes.push(`Title → ${nextTitle}`);
       }
 
       // Dates

@@ -6,6 +6,75 @@ import {
   runRelateFlow,
 } from "../../src/commands/tasks.js";
 
+async function runTasksUpdateCommand(args: string[]) {
+  vi.resetModules();
+
+  const mockClient = {
+    getWorkPackage: vi.fn().mockResolvedValue({
+      id: 56140,
+      subject: "Old title",
+      lockVersion: 1,
+      status: "New",
+      priority: "Normal",
+      assignee: "Unassigned",
+      createdAt: "",
+      updatedAt: "",
+      description: "",
+      descriptionHtml: "",
+      author: "Author",
+      project: "Project",
+      type: "Task",
+      startDate: "",
+      dueDate: "",
+      doneRatio: 0,
+    }),
+    updateWorkPackage: vi.fn().mockResolvedValue(undefined),
+    getAvailableStatuses: vi.fn().mockResolvedValue([]),
+    searchUsers: vi.fn().mockResolvedValue([]),
+    logTime: vi.fn().mockResolvedValue(undefined),
+  };
+
+  vi.doMock("../../src/config/store.js", () => ({
+    loadConfig: () => ({
+      url: "https://devtak.cbidigital.com",
+      username: "admin",
+      password: "secret",
+      session: "test-session-id",
+    }),
+  }));
+  vi.doMock("../../src/api/openproject.js", () => ({
+    OpenProjectClient: vi.fn(() => mockClient),
+  }));
+
+  const output = {
+    logs: [] as string[],
+    errors: [] as string[],
+  };
+
+  const logSpy = vi.spyOn(console, "log").mockImplementation((...parts: any[]) => {
+    output.logs.push(parts.join(" "));
+  });
+  const errorSpy = vi.spyOn(console, "error").mockImplementation((...parts: any[]) => {
+    output.errors.push(parts.join(" "));
+  });
+  const exitSpy = vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
+    const lastError = output.errors[output.errors.length - 1];
+    throw new Error(lastError || `process.exit(${code ?? 0})`);
+  }) as any);
+
+  try {
+    const { tasksCommand } = await import("../../src/commands/tasks.js");
+    await tasksCommand.parseAsync(["update", ...args], { from: "user" });
+    return { mockClient, ...output };
+  } finally {
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
+    vi.doUnmock("../../src/config/store.js");
+    vi.doUnmock("../../src/api/openproject.js");
+  }
+}
+
 describe("formatTasksTable", () => {
   it("formats work packages as a table string", () => {
     const tasks = [
@@ -121,5 +190,21 @@ describe("runRelateFlow", () => {
 describe("buildSearchActionChoices", () => {
   it("includes Relate in the interactive task action menu", () => {
     expect(buildSearchActionChoices().map((choice) => choice.value)).toContain("relate");
+  });
+});
+
+describe("tasks update title option", () => {
+  it("tasks update forwards --title to updateWorkPackage", async () => {
+    const { mockClient } = await runTasksUpdateCommand(["56140", "--title", "[ITG-18-003] New title"]);
+
+    expect(mockClient.updateWorkPackage).toHaveBeenCalledWith(56140, 1, {
+      subject: "[ITG-18-003] New title",
+    });
+  });
+
+  it("tasks update rejects whitespace-only --title values", async () => {
+    await expect(
+      runTasksUpdateCommand(["56140", "--title", "   "]),
+    ).rejects.toThrow("--title cannot be empty");
   });
 });
