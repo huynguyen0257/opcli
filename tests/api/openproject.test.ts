@@ -146,6 +146,25 @@ describe("OpenProjectClient", () => {
     expect(body._links.status.href).toBe("/api/v3/statuses/2");
   });
 
+  it("updateWorkPackage sends subject when provided", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
+
+    await client.updateWorkPackage(56140, 1, {
+      subject: "[ITG-18-003] Updated title",
+    });
+
+    const call = mockFetch.mock.calls[0];
+    expect(call[0]).toBe("https://devtak.cbidigital.com/api/v3/work_packages/56140");
+    expect(call[1].method).toBe("PATCH");
+    expect(JSON.parse(call[1].body)).toEqual({
+      lockVersion: 1,
+      subject: "[ITG-18-003] Updated title",
+    });
+  });
+
   it("createRelation posts relation body to work package relations endpoint", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

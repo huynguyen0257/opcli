@@ -330,6 +330,7 @@ export class OpenProjectClient {
     id: number,
     lockVersion: number,
     fields: {
+      subject?: string;
       status?: string;
       assignee?: string;
       parent?: string;
@@ -347,6 +348,7 @@ export class OpenProjectClient {
     if (Object.keys(links).length > 0) body._links = links;
     if (fields.startDate !== undefined) body.startDate = fields.startDate;
     if (fields.dueDate !== undefined) body.dueDate = fields.dueDate;
+    if (fields.subject !== undefined) body.subject = fields.subject;
     if (fields.description !== undefined) {
       body.description = { raw: fields.description };
     }
