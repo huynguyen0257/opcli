@@ -133,12 +133,21 @@ opcli tasks update <id> --start 2026-03-12 --due 2026-03-15
 # Cập nhật description
 opcli tasks update <id> --description "Nội dung mới"
 
+# Cập nhật title
+opcli tasks update 56140 --title "[ITG-18-003] Rithum Connected Channel Not Shown In Conative Without Listing Item Or Order"
+opcli tasks update 56140 --title "New title" --description "Updated description"
+
+# Không hợp lệ (bị từ chối): title chỉ chứa khoảng trắng
+opcli tasks update 56140 --title "   "
+
 # Log time
 opcli tasks update <id> --log-time 4 --log-date 2026-03-12 --log-comment "Nội dung"
 
 # Kết hợp nhiều thay đổi
 opcli tasks update <id> -s "In progress" --start 2026-03-12 --due 2026-03-15 --log-time 2
 ```
+
+`--title` không được để trống hoặc chỉ chứa khoảng trắng. CLI sẽ báo lỗi `--title cannot be empty`.
 
 ### Create relations
 
