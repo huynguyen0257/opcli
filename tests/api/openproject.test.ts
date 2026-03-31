@@ -165,6 +165,28 @@ describe("OpenProjectClient", () => {
     });
   });
 
+  it("updateWorkPackage sends subject together with description and dates", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
+
+    await client.updateWorkPackage(56140, 3, {
+      subject: "[ITG-18-003] New title",
+      startDate: "2026-03-31",
+      dueDate: "2026-04-01",
+      description: "Updated description",
+    });
+
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body)).toEqual({
+      lockVersion: 3,
+      subject: "[ITG-18-003] New title",
+      startDate: "2026-03-31",
+      dueDate: "2026-04-01",
+      description: { raw: "Updated description" },
+    });
+  });
+
   it("createRelation posts relation body to work package relations endpoint", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

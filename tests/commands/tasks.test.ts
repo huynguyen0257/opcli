@@ -207,4 +207,10 @@ describe("tasks update title option", () => {
       runTasksUpdateCommand(["56140", "--title", "   "]),
     ).rejects.toThrow("--title cannot be empty");
   });
+
+  it("tasks update prints title change in change summary", async () => {
+    const { logs } = await runTasksUpdateCommand(["56140", "--title", "[ITG-18-003] New title"]);
+
+    expect(logs.some((line) => line.includes("Title → [ITG-18-003] New title"))).toBe(true);
+  });
 });
